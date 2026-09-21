@@ -9,12 +9,15 @@ export const demoUsers = {
 };
 
 export const demoCategories = [
+  { id: "cat_grains", name: "Grains & Commodities", slug: "grains" },
   { id: "cat_seeds", name: "Seeds", slug: "seeds" }, { id: "cat_fertilizer", name: "Fertilizers & Plant Nutrition", slug: "fertilizers" },
   { id: "cat_protection", name: "Crop Protection", slug: "crop-protection" }, { id: "cat_livestock", name: "Livestock", slug: "livestock" },
   { id: "cat_equipment", name: "Farm Equipment", slug: "equipment" },
 ];
 
 export const demoProducts = [
+  { id: "prd_white_maize", name: "White Maize", slug: "white-maize", categoryId: "cat_grains", brand: "Trimex Commodity Network", unit: "50 kg bag", price: 3100, image: "/white-maize.png", applicableCrop: "Grain", description: "Clean, graded white maize available for household, trade and institutional sourcing.", bulkAvailable: true },
+  { id: "prd_beans_bulk", name: "Dry Beans", slug: "dry-beans", categoryId: "cat_grains", brand: "Trimex Commodity Network", unit: "90 kg bag", price: 9900, image: "/beans-and-pulses.png", applicableCrop: "Pulses", description: "Quality graded beans sourced through the Trimex agricultural network.", bulkAvailable: true },
   { id: "prd_h614", name: "Maize Seed H614", slug: "maize-seed-h614", categoryId: "cat_seeds", brand: "East Africa Seed Co.", unit: "2 kg pack", price: 650, image: "/white-maize.png", applicableCrop: "Maize", description: "High-performing maize seed suited to Kenya's mid-altitude growing zones." },
   { id: "prd_greengrams", name: "Green Grams", slug: "green-grams", categoryId: "cat_seeds", brand: "Trimex Select", unit: "1 kg pack", price: 420, image: "/greengrams.png", applicableCrop: "Pulses", description: "Quality green gram seed for reliable establishment and market-ready harvests." },
   { id: "prd_sorghum", name: "Sorghum Seed", slug: "sorghum-seed", categoryId: "cat_seeds", brand: "East Africa Seed Co.", unit: "1 kg pack", price: 380, image: "/sorghum.png", applicableCrop: "Sorghum", description: "Drought-resilient sorghum seed for productive dryland farming." },
