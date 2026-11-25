@@ -4,7 +4,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Trimex Inc. | Feeding Africa and the World",
   description: "Building the digital infrastructure for African agriculture.",
-  icons: { icon: "/favicon.png", apple: "/favicon.png" },
+  icons: { icon: [{ url: "/trimex-icon.png?v=2", type: "image/png" }], apple: "/trimex-icon.png?v=2" },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
