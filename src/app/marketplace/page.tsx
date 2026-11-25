@@ -6,7 +6,12 @@ import { demoCategories, demoProducts } from "@/lib/mock-data";
 import { supabase } from "@/lib/supabase";
 
 const money = (value: number) => `KES ${value.toLocaleString()}`;
-const catalogueProducts = demoProducts.map((product) => {
+type CatalogueProduct = Omit<(typeof demoProducts)[number], "availability"> & {
+  category: string;
+  viewHref: string;
+  availability: "AVAILABLE" | "LOW_STOCK" | "UNAVAILABLE";
+};
+const catalogueProducts: CatalogueProduct[] = demoProducts.map((product) => {
   const category = demoCategories.find((item) => item.id === product.categoryId);
   return { ...product, category: category?.name ?? "Agricultural inputs", viewHref: `/marketplace/${category?.slug ?? "seeds"}`, availability: "AVAILABLE" as const };
 });
@@ -17,7 +22,7 @@ export default function Marketplace() {
   const [complete, setComplete] = useState(false);
   const [activeCategory, setActiveCategory] = useState("all");
   const [query, setQuery] = useState("");
-  const [liveProducts, setLiveProducts] = useState<typeof catalogueProducts | null>(null);
+  const [liveProducts, setLiveProducts] = useState<CatalogueProduct[] | null>(null);
   useEffect(() => { (async () => { const { data, error } = await supabase.from("products").select("id,name,slug,category,unit,price,image_url,availability,applicable_crop").eq("is_active", true).order("featured", { ascending: false }).order("created_at", { ascending: false }); if (!error && data) setLiveProducts(data.map((product) => ({ id: product.id, name: product.name, slug: product.slug, categoryId: product.category, category: product.category, unit: product.unit, price: Number(product.price), image: product.image_url || "/white-maize.png", applicableCrop: product.applicable_crop || "", description: "", brand: "", bulkAvailable: false, viewHref: "/marketplace", availability: product.availability as "AVAILABLE" | "LOW_STOCK" | "UNAVAILABLE" }))); })(); }, []);
   const products = liveProducts ?? catalogueProducts;
   const categories = Array.from(new Set(products.map((product) => product.category)));
