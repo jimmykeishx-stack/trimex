@@ -50,14 +50,14 @@ export default function ImportPage() {
       const rows = parseCsv(await file.text());
       const next = rows.map((row) => {
         const name = (row.name ?? '').trim(); const slug = normalize(name).replace(/ /g, '-'); const reasons: string[] = [];
-        if (row.approved?.trim().toLowerCase() !== 'yes') reasons.push('Not approved');
         if (!name || !slug || name.length > 140) reasons.push('Invalid name');
         if (!row.trimex_category?.trim()) reasons.push('Category missing');
         if (!row.pack_hint?.trim()) reasons.push('Pack size missing');
-        if (!row.proposed_trimex_price?.trim() || !Number.isFinite(Number(row.proposed_trimex_price)) || Number(row.proposed_trimex_price) < 0) reasons.push('Final price missing');
+        const price = (row.proposed_trimex_price || row.observed_source_price || '').replaceAll(',', '').trim();
+        if (!price || !Number.isFinite(Number(price)) || Number(price) <= 0) reasons.push('Price missing');
         if (row.regulated_review?.toLowerCase() === 'true' && row.regulatory_approved?.trim().toLowerCase() !== 'yes') reasons.push('Regulatory review required');
         if (names.has(normalize(name)) || slugs.has(slug)) reasons.push('Possible duplicate');
-        if (row.image_file && !images.some((image) => image.name === row.image_file.split(/[\\/]/).pop())) reasons.push('Image not selected');
+        if (!row.image_file || !images.some((image) => image.name === row.image_file.split(/[\\/]/).pop())) reasons.push('Product image required');
         if (!reasons.length) { names.add(normalize(name)); slugs.add(slug); }
         return { row, name, slug, reasons };
       });
@@ -81,11 +81,12 @@ export default function ImportPage() {
         if (error) { failed++; continue; }
         imageUrl = supabase.storage.from('product-images').getPublicUrl(objectPath).data.publicUrl;
       }
-      const { error } = await supabase.from('products').insert({ name: item.name, slug: item.slug, category: item.row.trimex_category, unit: item.row.pack_hint, price: Number(item.row.proposed_trimex_price), image_url: imageUrl, availability: 'UNAVAILABLE', is_active: false, featured: false, description: `Source: ${item.row.source_url}. Imported for review.` });
+      const price = Number((item.row.proposed_trimex_price || item.row.observed_source_price).replaceAll(',', '').trim());
+      const { error } = await supabase.from('products').insert({ name: item.name, slug: item.slug, category: item.row.trimex_category, unit: item.row.pack_hint, price, image_url: imageUrl, availability: 'AVAILABLE', is_active: true, featured: false, description: `Source: ${item.row.source_url}.` });
       if (error) failed++; else created++;
     }
-    setPreviewed(false); setMessage(`${created} products saved as hidden; ${failed} skipped or failed. Run the preview again before retrying.`); setBusy(false);
+    setPreviewed(false); setMessage(`${created} products published; ${failed} skipped or failed. Run the preview again before retrying.`); setBusy(false);
   }
 
-  return <div className="catalogueImport"><header><p className="eyebrow">Bulk import</p><h2>Import products</h2><p>Review a batch, then save approved products as hidden for final checks.</p></header><section className="adminProductLayout"><div className="productForm"><label>Reviewed CSV<input type="file" accept=".csv,text/csv" onChange={(event) => { setFile(event.target.files?.[0] ?? null); setPreviewed(false); }} /></label><label>Product images<input type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={(event) => { setImages(Array.from(event.target.files ?? [])); setPreviewed(false); }} /></label><p>CSV rows need approved=yes, a final price and pack size. Regulated rows also need regulatory_approved=yes. Existing products are never overwritten.</p><p aria-live="polite">{message}</p><div className="adminActions"><button className="button dark" disabled={!file || busy} onClick={preview}>Preview batch</button><button className="button lime" disabled={!previewed || busy || !items.some((item) => !item.reasons.length)} onClick={importReady}>Save ready products as hidden</button></div></div><div className="adminProductList"><p className="eyebrow">Review results</p>{items.slice(0, 100).map((item, index) => <article key={`${item.slug}-${index}`}><div><b>{item.name || 'Unnamed product'}</b><span>{item.reasons.length ? item.reasons.join(' · ') : 'Ready to save as hidden'}</span></div></article>)}{items.length > 100 && <p>Showing the first 100 of {items.length} rows.</p>}</div></section></div>;
+  return <div className="catalogueImport"><header><p className="eyebrow">Bulk import</p><h2>Import products</h2><p>Preview a batch and publish eligible products.</p></header><section className="adminProductLayout"><div className="productForm"><label>Catalogue CSV<input type="file" accept=".csv,text/csv" onChange={(event) => { setFile(event.target.files?.[0] ?? null); setPreviewed(false); }} /></label><label>Product images<input type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={(event) => { setImages(Array.from(event.target.files ?? [])); setPreviewed(false); }} /></label><p>Items need a mapped category, pack size and price. Agroduka prices are used when a final price is not provided. Regulated items require regulatory_approved=yes. Existing products are never overwritten.</p><p aria-live="polite">{message}</p><div className="adminActions"><button className="button dark" disabled={!file || busy} onClick={preview}>Preview batch</button><button className="button lime" disabled={!previewed || busy || !items.some((item) => !item.reasons.length)} onClick={importReady}>Publish ready products as in stock</button></div></div><div className="adminProductList"><p className="eyebrow">Review results</p>{items.slice(0, 100).map((item, index) => <article key={`${item.slug}-${index}`}><div><b>{item.name || 'Unnamed product'}</b><span>{item.reasons.length ? item.reasons.join(' · ') : 'Ready to publish'}</span></div></article>)}{items.length > 100 && <p>Showing the first 100 of {items.length} rows.</p>}</div></section></div>;
 }
